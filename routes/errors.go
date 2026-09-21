@@ -18,7 +18,8 @@ func digitaltwinStatusFor(err error) int {
 		errors.Is(err, digitaltwin.ErrReadingNotFound):
 		return http.StatusNotFound
 	case errors.Is(err, digitaltwin.ErrInvalid),
-		errors.Is(err, digitaltwin.ErrInvalidConnection):
+		errors.Is(err, digitaltwin.ErrInvalidConnection),
+		errors.Is(err, digitaltwin.ErrUnknownMetric):
 		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError

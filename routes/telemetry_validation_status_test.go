@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,25 +13,11 @@ import (
 	"github.com/aosanya/mwanachama-backend-digitaltwin/routes"
 )
 
-// TestValidatingTelemetry_UnknownMetricRejectionSurfacesAs500 pins board row
-// W12: routes/errors.go's digitaltwinStatusFor switch enumerates every
-// sentinel error in errors.go, but ValidatingTelemetryRepository's
-// ErrUnknownMetric (telemetry_validating.go) lives outside that file and was
-// never added to the switch. The validation logic itself is correct — an
-// unregistered metric name, a unit mismatch, or a reading for the wrong
-// asset type are all genuinely refused — but because ErrUnknownMetric
-// matches none of digitaltwinStatusFor's errors.Is cases, the refusal falls
-// through to the default arm and comes back as a 500 "internal error"
-// instead of a 400 naming the real problem, exactly like every other
-// caller-input validation failure in this package does.
-//
-// This test asserts TODAY'S (broken) behavior — 500, body "internal
-// error" — so it pins the defect: once W12 is fixed (ErrUnknownMetric added
-// to digitaltwinStatusFor's ErrInvalid arm, or wrapped in ErrInvalid at the
-// source), this assertion must be updated to expect 400 with a body naming
-// the unmatched metric, and this test will go red as the signal that it
-// needs updating.
-func TestValidatingTelemetry_UnknownMetricRejectionSurfacesAs500(t *testing.T) {
+// TestValidatingTelemetry_UnknownMetricRejectionSurfacesAs400 pins the W12
+// fix: ValidatingTelemetryRepository's ErrUnknownMetric maps to 400 with a
+// body naming the rejected metric, on both the single and batch paths,
+// instead of falling through digitaltwinStatusFor to an opaque 500.
+func TestValidatingTelemetry_UnknownMetricRejectionSurfacesAs400(t *testing.T) {
 	registry := digitaltwin.NewMemoryRegistryRepository()
 	rawTelemetry := digitaltwin.NewMemoryTelemetryRepository()
 	validating := digitaltwin.NewValidatingTelemetryRepository(rawTelemetry, registry)
@@ -86,22 +73,22 @@ func TestValidatingTelemetry_UnknownMetricRejectionSurfacesAs500(t *testing.T) {
 		MetricName: "totally_unregistered_metric", Value: 1, Unit: "widgets", RecordedAt: recordedAt,
 	})
 
-	// PINS THE BUG: today this is 500 "internal error", not 400 naming the
-	// unmatched metric. A fix for W12 makes this assertion wrong on
-	// purpose — see this test's doc comment.
-	if code != http.StatusInternalServerError {
-		t.Fatalf("pinned-defect assertion failed (bug may be fixed — update this test per W12): got status %d, want %d (500)", code, http.StatusInternalServerError)
+	if code != http.StatusBadRequest {
+		t.Fatalf("unregistered metric: got status %d (body %s), want 400", code, body)
 	}
-	if body != `{"error":"internal error"}`+"\n" {
-		t.Fatalf("pinned-defect assertion failed (bug may be fixed — update this test per W12): got body %q", body)
+	if !strings.Contains(body, "totally_unregistered_metric") {
+		t.Fatalf("body should name the rejected metric, got %q", body)
 	}
 
-	// Same gap on the batch path.
+	// Batch path.
 	code, body = post(t, "/telemetry/readings/batch", []digitaltwin.TelemetryReading{
 		{AssetID: pipeline.ID, AssetType: digitaltwin.AssetTypePipeline, MetricName: "pressure_psi", Value: 1, Unit: "psi", RecordedAt: recordedAt},
 		{AssetID: pipeline.ID, AssetType: digitaltwin.AssetTypePipeline, MetricName: "another_unregistered_metric", Value: 1, Unit: "x", RecordedAt: recordedAt},
 	})
-	if code != http.StatusInternalServerError {
-		t.Fatalf("pinned-defect assertion failed on batch path (bug may be fixed — update this test per W12): got status %d, want %d (500)", code, http.StatusInternalServerError)
+	if code != http.StatusBadRequest {
+		t.Fatalf("batch with an unregistered metric: got status %d (body %s), want 400", code, body)
+	}
+	if !strings.Contains(body, "another_unregistered_metric") {
+		t.Fatalf("batch body should name the rejected metric, got %q", body)
 	}
 }
