@@ -1,0 +1,137 @@
+{
+  "operations": {
+    "create_node": {
+      "method": "POST", "path": "/nodes", "call": "CreateNode", "action": "digitaltwin.node.create",
+      "status": 201,
+      "title": "Register node",
+      "description": "Register one thing for the twin to track. The kind is fixed here and cannot be changed afterwards, because every observation recorded against the node carries a copy of it. A node that names no status starts as planned.",
+      "args": [{"from": "body", "whole": true}],
+      "returns": [{"body": true}]
+    },
+    "get_node": {
+      "method": "GET", "path": "/nodes/{nodeID}", "call": "GetNode", "action": "digitaltwin.node.read",
+      "title": "Read node",
+      "description": "Read one node by its storage key.",
+      "args": [{"from": "path", "as": "nodeID", "description": "The node to read."}],
+      "returns": [{"body": true}]
+    },
+    "list_nodes": {
+      "method": "GET", "path": "/nodes", "call": "ListNodes", "action": "digitaltwin.node.list",
+      "title": "List nodes",
+      "description": "List the nodes matching the filter, oldest first. An empty kind or status matches every one.",
+      "args": [{"from": "query", "whole": true}],
+      "returns": [{"body": true}]
+    },
+    "update_node": {
+      "method": "PUT", "path": "/nodes/{nodeID}", "call": "UpdateNode", "action": "digitaltwin.node.update",
+      "title": "Update node",
+      "description": "Replace a node's name, position, commissioning date, notes and document. The kind never changes, and the status changes only through its own address, so neither is read from this body.",
+      "args": [{"from": "body", "whole": true},
+               {"from": "path", "as": "nodeID", "into": "ID", "description": "The node to update. The address decides, not the body."}],
+      "returns": [{"body": true}]
+    },
+    "set_node_status": {
+      "method": "POST", "path": "/nodes/{nodeID}/status", "call": "SetNodeStatus", "action": "digitaltwin.node.set_status",
+      "title": "Set node status",
+      "description": "Move a node through its service life. Only the steps the module allows are accepted, and a decommissioned node is at the end of the road.",
+      "args": [{"from": "path", "as": "nodeID", "description": "The node to move."},
+               {"from": "body", "as": "status", "required": true, "field": "Node.status"}],
+      "returns": [{"body": true}]
+    },
+    "create_link": {
+      "method": "POST", "path": "/links", "call": "CreateLink", "action": "digitaltwin.link.create",
+      "status": 201,
+      "title": "Link two nodes",
+      "description": "Record a directed edge between two nodes that both already exist. Creating an edge that is already there returns the one that is there, so repeating the call is safe.",
+      "args": [{"from": "body", "whole": true}],
+      "returns": [{"body": true}]
+    },
+    "delete_link": {
+      "method": "DELETE", "path": "/links/{relation}/{fromNodeID}/{toNodeID}", "call": "DeleteLink", "action": "digitaltwin.link.delete",
+      "status": 204,
+      "title": "Unlink two nodes",
+      "description": "Remove the single edge the relation and the two ends identify.",
+      "args": [{"from": "path", "as": "relation", "description": "What the edge asserts."},
+               {"from": "path", "as": "fromNodeID", "description": "The node the edge points away from."},
+               {"from": "path", "as": "toNodeID", "description": "The node the edge points at."}],
+      "returns": [{"body": true}]
+    },
+    "list_links": {
+      "method": "GET", "path": "/nodes/{nodeID}/links", "call": "ListLinks", "action": "digitaltwin.link.list",
+      "title": "List links",
+      "description": "The single-hop edges touching one node. An empty relation matches every relation, and the direction is outbound unless inbound is asked for.",
+      "args": [{"from": "path", "as": "nodeID", "description": "The node to walk from."},
+               {"from": "query", "as": "relation", "description": "Narrows to one relation. Empty matches all."},
+               {"from": "query", "as": "direction", "description": "'inbound' to walk edges pointing at the node; anything else walks outward."}],
+      "returns": [{"body": true}]
+    },
+    "upsert_metric": {
+      "method": "POST", "path": "/metrics", "call": "UpsertMetric", "action": "digitaltwin.metric.upsert",
+      "title": "Declare metric",
+      "description": "Declare what a measurement is called and what it is read in, or replace the declaration already there. The node kind and the name together identify it.",
+      "args": [{"from": "body", "whole": true}],
+      "returns": [{"body": true}]
+    },
+    "list_metrics": {
+      "method": "GET", "path": "/metrics", "call": "ListMetrics", "action": "digitaltwin.metric.list",
+      "title": "List metrics",
+      "description": "Every declared measurement, optionally narrowed to one node kind. An empty kind matches all.",
+      "args": [{"from": "query", "as": "node_kind", "description": "Narrows to one node kind. Empty matches all."}],
+      "returns": [{"body": true}]
+    },
+    "set_retention": {
+      "method": "POST", "path": "/retentions", "call": "SetRetention", "action": "digitaltwin.retention.set",
+      "title": "Set retention rule",
+      "description": "Say how long observations matching a scope are kept, or replace the rule already there. The node kind and the metric name together identify it, and a rule naming a metric must also name a kind.",
+      "args": [{"from": "body", "whole": true}],
+      "returns": [{"body": true}]
+    },
+    "list_retentions": {
+      "method": "GET", "path": "/retentions", "call": "ListRetentions", "action": "digitaltwin.retention.list",
+      "title": "List retention rules",
+      "description": "Every retention rule. Observations matching no rule are kept indefinitely.",
+      "returns": [{"body": true}]
+    },
+    "record_observation": {
+      "method": "POST", "path": "/observations", "call": "RecordObservation", "action": "digitaltwin.observation.record",
+      "status": 201,
+      "title": "Record observation",
+      "description": "Store one measurement. Append-only: nothing here edits what was already said, so a wrong value is corrected by recording a further one.",
+      "args": [{"from": "body", "whole": true}],
+      "returns": [{"body": true}]
+    },
+    "record_observations": {
+      "method": "POST", "path": "/observations/batch", "call": "RecordObservations", "action": "digitaltwin.observation.record_batch",
+      "status": 201,
+      "title": "Record observations",
+      "description": "Store many measurements in one call, which is the path a source that samples often should take. All or nothing: if one is refused, none are stored.",
+      "args": [{"from": "body", "whole": true}],
+      "returns": [{"body": true}]
+    },
+    "query_observations": {
+      "method": "GET", "path": "/observations", "call": "QueryObservations", "action": "digitaltwin.observation.query",
+      "title": "Query observations",
+      "description": "Observations matching the filter, oldest first. from and to bound the time the measurement was taken; either left out, or not an RFC 3339 instant, leaves that side unbounded.",
+      "args": [{"from": "query", "whole": true}],
+      "returns": [{"body": true}]
+    },
+    "latest_observations": {
+      "method": "GET", "path": "/nodes/{nodeID}/observations/latest", "call": "Latest", "action": "digitaltwin.observation.latest",
+      "title": "Read current state",
+      "description": "What one node is doing now. Naming a metric returns that one latest observation; naming none returns the latest of every metric recorded against the node, which is the node's whole current state.",
+      "args": [{"from": "path", "as": "nodeID", "description": "The node to read."},
+               {"from": "query", "as": "metric_name", "description": "Narrows to one measurement. Empty returns the latest of each."}],
+      "returns": [{"body": true}]
+    }
+  },
+  "errors": {
+    "ErrInvalid": 400,
+    "ErrInvalidLink": 400,
+    "ErrUnknownMetric": 400,
+    "ErrNodeNotFound": 404,
+    "ErrLinkNotFound": 404,
+    "ErrMetricNotFound": 404,
+    "ErrRetentionNotFound": 404,
+    "ErrObservationNotFound": 404
+  }
+}

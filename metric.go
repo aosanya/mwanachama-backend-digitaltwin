@@ -1,66 +1,53 @@
 package digitaltwin
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"strings"
 )
 
-// MetricDefinition is the registry-side half of DSN-1701 decision 6:
-// reading/metric shape is "configurable once we have an expert, we only
-// supply the tool" — so the set of metric names, units, and (optionally)
-// sane-value bounds a deployment cares about is data, not a hardcoded Go
-// type per asset type. TelemetryReading.MetricName / .Unit are expected to
-// name a MetricDefinition registered here, though this package does not
-// enforce that at ingest time (open question — see
-// documentation/2. design/README.md; enforcing it means every high-frequency
-// write pays a registry lookup, which needs to be measured before it's
-// required).
-type MetricDefinition struct {
-	// ID is the entity-graph storage key — opaque to callers.
-	ID string `json:"id"`
+func (m *twinManager) UpsertMetric(ctx context.Context, d Metric) (Metric, error) {
+	if err := m.checks(roleMetric, d); err != nil {
+		return Metric{}, err
+	}
+	if !d.BoundsOrdered() {
+		return Metric{}, fmt.Errorf("%w: metric %q has a min_value above its max_value", ErrInvalid, d.Name)
+	}
 
-	// Name is the metric name a TelemetryReading.MetricName is expected to
-	// match (e.g. "pressure_psi", "voltage_kv"). Required, unique per
-	// AssetType.
-	Name string `json:"name"`
-
-	// Unit is the unit of measure (e.g. "psi", "kV", "m3/h"). Required.
-	Unit string `json:"unit"`
-
-	// AssetType scopes this definition to one asset type. Empty means it
-	// applies to any asset type.
-	AssetType AssetType `json:"asset_type,omitempty"`
-
-	// Description is free-form context for what this metric means and how
-	// it's measured.
-	Description string `json:"description,omitempty"`
-
-	// MinValue / MaxValue are optional sane-value bounds, expert-configured.
-	// Nil means "no bound". Not enforced by this package — a future
-	// alerting/threshold mechanism (not yet designed) is the natural
-	// consumer.
-	MinValue *float64 `json:"min_value,omitempty"`
-	MaxValue *float64 `json:"max_value,omitempty"`
-
-	// CreatedAt is the RFC 3339 timestamp this definition was first created.
-	CreatedAt string `json:"created_at"`
-	// UpdatedAt is the RFC 3339 timestamp of the most recent mutation.
-	UpdatedAt string `json:"updated_at"`
+	held, err := m.metricNamed(ctx, d.NodeKind, d.Name)
+	switch {
+	case err == nil:
+		d.ID = held.ID
+		d.CreatedAt = held.CreatedAt
+		d.UpdatedAt = m.now()
+		if err := m.update(ctx, roleMetric, "id", d.ID, d); err != nil {
+			return Metric{}, err
+		}
+		return d, nil
+	case errors.Is(err, ErrMetricNotFound):
+		d.ID = newID()
+		d.CreatedAt = m.now()
+		d.UpdatedAt = d.CreatedAt
+		if err := m.insert(ctx, roleMetric, d); err != nil {
+			return Metric{}, err
+		}
+		return d, nil
+	default:
+		return Metric{}, err
+	}
 }
 
-// Validate refuses a malformed metric definition.
-func (m MetricDefinition) Validate() error {
-	if strings.TrimSpace(m.Name) == "" {
-		return fmt.Errorf("%w: a metric definition with no name", ErrInvalid)
+func (m *twinManager) metricNamed(ctx context.Context, nodeKind, name string) (Metric, error) {
+	q := m.q(ctx, roleMetric).Where("node_kind = ?", nodeKind).Where("name = ?", name)
+	var out Metric
+	err := m.take(q, roleMetric, &out, ErrMetricNotFound)
+	return out, err
+}
+
+func (m *twinManager) ListMetrics(ctx context.Context, nodeKind string) ([]Metric, error) {
+	q := m.q(ctx, roleMetric)
+	if nodeKind != "" {
+		q = q.Where("node_kind = ?", nodeKind)
 	}
-	if strings.TrimSpace(m.Unit) == "" {
-		return fmt.Errorf("%w: metric %q has no unit", ErrInvalid, m.Name)
-	}
-	if m.AssetType != "" && !IsAssetType(m.AssetType) {
-		return fmt.Errorf("%w: metric %q scopes to asset type %q, which is not one of the six v1 types", ErrInvalid, m.Name, m.AssetType)
-	}
-	if m.MinValue != nil && m.MaxValue != nil && *m.MinValue > *m.MaxValue {
-		return fmt.Errorf("%w: metric %q has min_value %v greater than max_value %v", ErrInvalid, m.Name, *m.MinValue, *m.MaxValue)
-	}
-	return nil
+	return listOf[Metric](m, q.Order("name"), roleMetric)
 }

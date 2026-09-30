@@ -1,0 +1,102 @@
+{
+  "module": "digitaltwin",
+  "domain": "fleet",
+  "instance": "fleet",
+  "objects": [
+    {
+      "role": "node",
+      "name": "vehicle",
+      "table": "vehicles",
+      "description": "One vehicle, trailer or tracker the operator runs. Nothing here is installed anywhere; the same object serves a thing that moves.",
+      "indexes": [
+        {
+          "name": "depot",
+          "description": "The home depot browse, which is a word this domain has and the utility next door does not.",
+          "path": {
+            "field": "doc",
+            "path": "depot"
+          }
+        },
+        {
+          "name": "plate",
+          "description": "Finds a vehicle by registration, and stops the same plate being entered twice.",
+          "path": {
+            "field": "doc",
+            "path": "registration.plate"
+          },
+          "unique": true
+        }
+      ]
+    },
+    {
+      "role": "link",
+      "name": "coupling",
+      "table": "couplings",
+      "description": "What is hitched to what, what is a component of what, and which tracker is watching which vehicle."
+    },
+    {
+      "role": "metric",
+      "name": "channel",
+      "table": "channels",
+      "description": "One quantity the telematics units report — fuel level, odometer, coolant temperature — and its unit."
+    },
+    {
+      "role": "observation",
+      "name": "sample",
+      "table": "samples",
+      "description": "One telematics sample from one vehicle at one moment."
+    },
+    {
+      "role": "retention",
+      "name": "retention_rule",
+      "table": "retention_rules",
+      "description": "How long samples of one kind are kept.",
+      "fields": [
+        {
+          "name": "retention_days",
+          "default": "90"
+        }
+      ]
+    },
+    {
+      "name": "driver",
+      "table": "drivers",
+      "description": "One person who drives. The fleet's own object — this module has no rule that touches it, and declares no role it could fill.",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Storage key, opaque to callers.",
+          "primary": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The driver's full name.",
+          "required": true
+        },
+        {
+          "name": "licence_number",
+          "type": "string",
+          "description": "The driving licence this person holds. Unique across the fleet.",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "licence_expires_at",
+          "type": "timestamp",
+          "description": "When the licence stops being valid."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "expiry",
+          "description": "Finds the licences about to lapse.",
+          "fields": [
+            "licence_expires_at"
+          ]
+        }
+      ]
+    }
+  ]
+}

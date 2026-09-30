@@ -1,0 +1,340 @@
+{
+  "module": "digitaltwin",
+  "objects": [
+    {
+      "role": "node",
+      "description": "One thing the twin tracks, with a service life and a place. Whatever a domain models — a length of pipe, a machine on a line, a vehicle, a room — it fills this role, and only the few fields beside the document mean the same in every domain.",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Storage key, opaque to callers.",
+          "primary": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The short human-readable label this node is known by.",
+          "required": true
+        },
+        {
+          "name": "kind",
+          "type": "string",
+          "description": "What sort of thing this node is, in the domain's own vocabulary. The module stores the word and never interprets it, which is what lets one deployment's pipelines and another's vehicles share a column. Fixed at creation, because every observation recorded against the node carries a copy of it.",
+          "required": true,
+          "immutable": true,
+          "matches": "name"
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "description": "Where the node is in its service life. The steps a node may take between these is the module's rule, not the domain's, so the set is declared here.",
+          "default": "planned",
+          "values": [
+            "planned",
+            "operational",
+            "maintenance",
+            "fault",
+            "decommissioned"
+          ]
+        },
+        {
+          "name": "location",
+          "type": "json",
+          "description": "Where the node physically sits, as a lat/lng pair. Absent rather than zero when the position is unknown, because nought degrees by nought degrees is a real place in the Gulf of Guinea.",
+          "nullable": true
+        },
+        {
+          "name": "commissioned_at",
+          "type": "timestamp",
+          "description": "When the node entered service. Empty when unknown, and unrelated to when the row was written."
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "description": "Free-form operator commentary about this node."
+        },
+        {
+          "name": "doc",
+          "type": "json",
+          "description": "Everything true of this node that only its kind gives meaning to — a diameter, a voltage rating, which sort of station it is. Queried in place by path rather than parsed per row, so anything domain-shaped lives in here rather than in a column of its own."
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "description": "When the row was created."
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "description": "When the row was last written."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "kind_status",
+          "description": "The registry listing, which filters on either or both.",
+          "fields": [
+            "kind",
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "role": "link",
+      "description": "One directed edge between two nodes. The topology is the half of a twin that the nodes themselves cannot state.",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Storage key, opaque to callers.",
+          "primary": true
+        },
+        {
+          "name": "relation",
+          "type": "enum",
+          "description": "What the edge asserts about its two ends. These are relations between things rather than words about any one subject, so the set is the module's: a component is part of an assembly whether the assembly is a pipeline or a printing press.",
+          "values": [
+            "connects_to",
+            "part_of",
+            "monitors"
+          ]
+        },
+        {
+          "name": "from_node_id",
+          "type": "string",
+          "description": "The node the edge points away from.",
+          "required": true
+        },
+        {
+          "name": "to_node_id",
+          "type": "string",
+          "description": "The node the edge points at.",
+          "required": true
+        },
+        {
+          "name": "properties",
+          "type": "json",
+          "description": "Caller-supplied detail about this edge. Domain-shaped, so it lives here rather than in columns."
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "description": "When the edge was created."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "from_relation",
+          "description": "Walks the graph outward from one node.",
+          "fields": [
+            "from_node_id",
+            "relation"
+          ]
+        },
+        {
+          "name": "to_relation",
+          "description": "Walks the graph inward to one node.",
+          "fields": [
+            "to_node_id",
+            "relation"
+          ]
+        }
+      ]
+    },
+    {
+      "role": "metric",
+      "description": "One measurement a deployment has decided is worth taking, and what it is measured in. The vocabulary is configured rather than declared in Go, because which quantities matter is the expert's to say and not this module's.",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Storage key, opaque to callers.",
+          "primary": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "What the measurement is called, and the name an observation refers to it by.",
+          "required": true,
+          "matches": "name"
+        },
+        {
+          "name": "unit",
+          "type": "string",
+          "description": "The unit the measurement is taken in. Required, because a number whose unit nobody recorded cannot be compared with anything.",
+          "required": true
+        },
+        {
+          "name": "node_kind",
+          "type": "string",
+          "description": "The kind of node this measurement applies to. Empty means it applies to every kind.",
+          "matches": "name"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "description": "What this measurement means and how it is taken."
+        },
+        {
+          "name": "min_value",
+          "type": "float",
+          "description": "The lowest value considered sane, when a deployment has decided one. Absent rather than zero, because zero is a legitimate bound.",
+          "nullable": true
+        },
+        {
+          "name": "max_value",
+          "type": "float",
+          "description": "The highest value considered sane, when a deployment has decided one. Absent rather than zero, for the same reason.",
+          "nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "description": "When the definition was created."
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "description": "When the definition was last written."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "kind_name",
+          "description": "Finds the definition a node kind and a name identify, which is the pair an upsert keys on.",
+          "fields": [
+            "node_kind",
+            "name"
+          ],
+          "unique": true
+        }
+      ]
+    },
+    {
+      "role": "observation",
+      "description": "One measurement of one node at one moment. Append-only: a wrong observation is corrected by recording a further one, never by editing what was said, because a twin whose history can be rewritten answers no question about the past.",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Storage key, opaque to callers.",
+          "primary": true
+        },
+        {
+          "name": "node_id",
+          "type": "string",
+          "description": "The node this was measured against. Not required to be an instrument — a reading may name whatever it describes directly.",
+          "required": true
+        },
+        {
+          "name": "node_kind",
+          "type": "string",
+          "description": "A copy of the node's kind, held here so a query filtering by kind does not join the registry on every read."
+        },
+        {
+          "name": "metric_name",
+          "type": "string",
+          "description": "Which measurement this is, by name. Expected to name a declared metric, though nothing checks that on the way in unless a deployment asks for it.",
+          "required": true,
+          "matches": "name"
+        },
+        {
+          "name": "value",
+          "type": "float",
+          "description": "What was measured."
+        },
+        {
+          "name": "unit",
+          "type": "string",
+          "description": "A copy of the unit, held on the observation so it stays self-describing after the metric that defined it is edited or removed."
+        },
+        {
+          "name": "recorded_at",
+          "type": "timestamp",
+          "description": "When the measurement was taken, according to the source. This is the field observations are ordered and bounded by.",
+          "required": true
+        },
+        {
+          "name": "ingested_at",
+          "type": "timestamp",
+          "description": "When this service received it. Separate from recorded_at because a source that pushes often guarantees neither order nor promptness."
+        },
+        {
+          "name": "quality",
+          "type": "string",
+          "description": "Free-form provenance or confidence commentary on the sample. Not a checked vocabulary."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "node_metric_recorded",
+          "description": "The query a twin exists to answer: one node's readings of one measurement, in time order.",
+          "fields": [
+            "node_id",
+            "metric_name",
+            "recorded_at"
+          ]
+        },
+        {
+          "name": "recorded",
+          "description": "Bounds a purge by age without reading a node id.",
+          "fields": [
+            "recorded_at"
+          ]
+        }
+      ]
+    },
+    {
+      "role": "retention",
+      "description": "How long observations matching a scope are kept. Having no rule means keeping them forever, so an absent rule and an explicit 'keep indefinitely' are never confused with each other.",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Storage key, opaque to callers.",
+          "primary": true
+        },
+        {
+          "name": "node_kind",
+          "type": "string",
+          "description": "The kind of node this rule covers. Empty means every kind not covered by a narrower rule.",
+          "matches": "name"
+        },
+        {
+          "name": "metric_name",
+          "type": "string",
+          "description": "The measurement this rule covers. Empty means every measurement taken of node_kind.",
+          "matches": "name"
+        },
+        {
+          "name": "retention_days",
+          "type": "int",
+          "description": "How many days a matching observation is kept for. Must be positive; keeping something forever is expressed by declaring no rule at all."
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "description": "When the rule was created."
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "description": "When the rule was last written."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "kind_metric",
+          "description": "Finds the rule a node kind and a measurement identify, which is the pair an upsert keys on.",
+          "fields": [
+            "node_kind",
+            "metric_name"
+          ],
+          "unique": true
+        }
+      ]
+    }
+  ]
+}

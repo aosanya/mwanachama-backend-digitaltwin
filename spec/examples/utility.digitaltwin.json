@@ -1,0 +1,47 @@
+{
+  "module": "digitaltwin",
+  "domain": "utility",
+  "instance": "utility",
+  "objects": [
+    {
+      "role": "node",
+      "name": "asset",
+      "table": "assets",
+      "description": "One piece of installed infrastructure: a run of pipe, a transmission line, a valve, a compressor or pump station, a substation, a sensor.",
+      "indexes": [
+        {
+          "name": "station_type",
+          "description": "Separates compressor stations from pump stations, which is a distinction only this domain draws.",
+          "path": {
+            "field": "doc",
+            "path": "station_type"
+          }
+        }
+      ]
+    },
+    {
+      "role": "link",
+      "name": "connection",
+      "table": "connections",
+      "description": "One directed link in the network: what feeds what, what is a component of what, and what instruments what."
+    },
+    {
+      "role": "metric",
+      "name": "metric_definition",
+      "table": "metric_definitions",
+      "description": "One quantity this utility has decided is worth measuring — a pressure, a voltage, a flow rate — and the unit it is read in."
+    },
+    {
+      "role": "observation",
+      "name": "reading",
+      "table": "readings",
+      "description": "One instrument reading against one asset at one moment. The high-frequency table, and the reason the twin is a twin rather than a register."
+    },
+    {
+      "role": "retention",
+      "name": "retention_policy",
+      "table": "retention_policies",
+      "description": "How long readings of one kind are kept before the sweep removes them."
+    }
+  ]
+}
