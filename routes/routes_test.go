@@ -91,7 +91,7 @@ func TestEveryRouteIsGatedUntilNamedAnonymous(t *testing.T) {
 	if public := routes.PublicRoutes(tm); len(public) != 0 {
 		t.Fatalf("%d routes are reachable without a caller", len(public))
 	}
-	if gated := routes.OperatorRoutes(tm); len(gated) != 16 {
+	if gated := routes.OperatorRoutes(tm, routes.Mount{}); len(gated) != 16 {
 		t.Fatalf("%d routes are gated, want all 16", len(gated))
 	}
 }
@@ -99,7 +99,7 @@ func TestEveryRouteIsGatedUntilNamedAnonymous(t *testing.T) {
 func TestARefusedActionNeverReachesTheManager(t *testing.T) {
 	tm, _ := newManager(t)
 	deny := func(ctx context.Context, action string) error { return context.Canceled }
-	built, err := routes.BuildWith(tm, deny)
+	built, err := routes.BuildFor(tm, routes.Mount{Authorize: deny})
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}

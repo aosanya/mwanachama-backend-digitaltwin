@@ -1,9 +1,6 @@
 package routes
 
 import (
-	"fmt"
-	"sync"
-
 	"github.com/aosanya/mwanachama-backend-shared/dispatch"
 	"github.com/aosanya/mwanachama-backend-shared/httpwire"
 
@@ -12,11 +9,9 @@ import (
 
 type Route = httpwire.Route
 
-var operations = sync.OnceValues(func() (*dispatch.Spec, error) {
-	return dispatch.Parse(digitaltwin.Operations())
-})
+type Mount = dispatch.Mount
 
-var sentinels = map[string]error{
+var Sentinels = map[string]error{
 	"ErrInvalid":             digitaltwin.ErrInvalid,
 	"ErrInvalidLink":         digitaltwin.ErrInvalidLink,
 	"ErrUnknownMetric":       digitaltwin.ErrUnknownMetric,
@@ -29,61 +24,22 @@ var sentinels = map[string]error{
 
 var AnonymousActions = []string{}
 
-type Mount struct {
-	Authorize dispatch.Authorizer
-	Caller    dispatch.Caller
+var Table = dispatch.NewTable(digitaltwin.Operations(), Sentinels, AnonymousActions...)
+
+func Build(tm digitaltwin.TwinManager) ([]Route, error) { return Table.Build(tm, Mount{}) }
+
+func BuildFor(tm digitaltwin.TwinManager, m Mount) ([]Route, error) { return Table.Build(tm, m) }
+
+func Routes(tm digitaltwin.TwinManager) []Route { return Table.Routes(tm, Mount{}) }
+
+func RoutesFor(tm digitaltwin.TwinManager, m Mount) []Route { return Table.Routes(tm, m) }
+
+func Split(tm digitaltwin.TwinManager, m Mount) dispatch.Split { return Table.Split(tm, m) }
+
+func PublicRoutes(tm digitaltwin.TwinManager) []Route {
+	return Table.Split(tm, Mount{}).Anonymous
 }
 
-func Build(tm digitaltwin.TwinManager) ([]Route, error) { return BuildWith(tm, nil) }
-
-func BuildWith(tm digitaltwin.TwinManager, authorize dispatch.Authorizer) ([]Route, error) {
-	return BuildFor(tm, Mount{Authorize: authorize})
-}
-
-func BuildFor(tm digitaltwin.TwinManager, m Mount) ([]Route, error) {
-	s, err := operations()
-	if err != nil {
-		return nil, err
-	}
-	return dispatch.Dispatch(s, dispatch.Deps{
-		Manager: tm, Errors: sentinels, Authorize: m.Authorize, Caller: m.Caller,
-	})
-}
-
-func Routes(tm digitaltwin.TwinManager) []Route { return RoutesWith(tm, nil) }
-
-func RoutesWith(tm digitaltwin.TwinManager, authorize dispatch.Authorizer) []Route {
-	return RoutesFor(tm, Mount{Authorize: authorize})
-}
-
-func RoutesFor(tm digitaltwin.TwinManager, m Mount) []Route {
-	out, err := BuildFor(tm, m)
-	if err != nil {
-		panic(fmt.Sprintf("digitaltwin routes: %v", err))
-	}
-	return out
-}
-
-func Split(tm digitaltwin.TwinManager) dispatch.Split { return SplitWith(tm, nil) }
-
-func SplitWith(tm digitaltwin.TwinManager, authorize dispatch.Authorizer) dispatch.Split {
-	return SplitFor(tm, Mount{Authorize: authorize})
-}
-
-func SplitFor(tm digitaltwin.TwinManager, m Mount) dispatch.Split {
-	public := dispatch.Anonymous(Routes(tm), AnonymousActions...)
-	gated := dispatch.Anonymous(RoutesFor(tm, m), AnonymousActions...)
-	return dispatch.Split{Anonymous: public.Anonymous, Gated: gated.Gated}
-}
-
-func PublicRoutes(tm digitaltwin.TwinManager) []Route { return Split(tm).Anonymous }
-
-func OperatorRoutes(tm digitaltwin.TwinManager) []Route { return OperatorRoutesWith(tm, nil) }
-
-func OperatorRoutesWith(tm digitaltwin.TwinManager, authorize dispatch.Authorizer) []Route {
-	return OperatorRoutesFor(tm, Mount{Authorize: authorize})
-}
-
-func OperatorRoutesFor(tm digitaltwin.TwinManager, m Mount) []Route {
-	return SplitFor(tm, m).Gated
+func OperatorRoutes(tm digitaltwin.TwinManager, m Mount) []Route {
+	return Table.Split(tm, m).Gated
 }

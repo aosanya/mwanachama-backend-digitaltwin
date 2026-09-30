@@ -1,13 +1,13 @@
 package digitaltwin_test
 
 import (
-	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	digitaltwin "github.com/aosanya/mwanachama-backend-digitaltwin"
 	"github.com/aosanya/mwanachama-backend-digitaltwin/models"
+	"github.com/aosanya/mwanachama-backend-digitaltwin/routes"
+	"github.com/aosanya/mwanachama-backend-shared/dispatch"
 	"github.com/aosanya/mwanachama-backend-shared/spec"
 )
 
@@ -168,21 +168,12 @@ func TestVocabularyMatchesTheBlueprint(t *testing.T) {
 }
 
 func TestEverySentinelIsMappedToAStatus(t *testing.T) {
-	raw, err := os.ReadFile("errors.go")
+	s, err := dispatch.Parse(digitaltwin.Operations())
 	if err != nil {
-		t.Fatalf("read errors.go: %v", err)
+		t.Fatalf("parse operations: %v", err)
 	}
-	mapped := string(digitaltwin.Operations())
-
-	for _, line := range strings.Split(string(raw), "\n") {
-		const prefix = "var Err"
-		if !strings.HasPrefix(line, prefix) {
-			continue
-		}
-		name := strings.Fields(line)[1]
-		if !strings.Contains(mapped, `"`+name+`"`) {
-			t.Errorf("%s is exported and the route table maps it to no status, so it is redacted to a 500", name)
-		}
+	for _, problem := range dispatch.UnmappedSentinels(s, routes.Sentinels, ".") {
+		t.Error(problem)
 	}
 }
 
