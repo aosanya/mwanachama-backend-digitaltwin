@@ -123,6 +123,24 @@ production config (catalog's CAT6). It names its objects differently
 declares an object of its own — `driver` — with no role, to prove a domain
 can add what the module does not have.
 
+`spec/examples/lab.digitaltwin.json` is a community lab — terminals, access
+points, a router, servers, a solar array and a battery bank — and, like the
+fleet, nobody provisions it. Its objects are `device`, `wiring`, `reading`,
+`sample` and `retention_rule`; it indexes a device's `room` and its unique
+`serial` in the document and defaults retention to 30 days. A spec cannot
+carry rows, so the example kit itself lives in `lab_example_test.go`: it
+provisions the lab spec on SQLite and, through `TwinManager`, creates seven
+devices, declares `online`, `throughput` (per kind) and `battery_charge`
+with their limits, wires terminals to the access point, the access point
+and the server to the router, the solar array to the battery, and the
+server as the battery's monitor, then records readings through
+`ValidatingTwinManager`.
+
+A metric's `min_value`/`max_value` are stored and held in order, but no
+reading is checked or flagged against them: a battery reading of 5% under a
+20% floor is recorded like any other. Whether an out-of-limit reading should
+be refused, flagged or left to a consumer is not decided here.
+
 `TestTwoDomainsCoexist` migrates both into one database and writes through
 both managers; `TestEveryExampleFitsTheTypes` builds a manager over *every*
 shipped spec, which is what catches drift under the domain nobody loaded.

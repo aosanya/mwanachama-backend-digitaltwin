@@ -1,0 +1,62 @@
+{
+  "module": "digitaltwin",
+  "domain": "lab",
+  "instance": "lab",
+  "objects": [
+    {
+      "role": "node",
+      "name": "device",
+      "table": "devices",
+      "description": "One piece of a community lab's kit: a terminal, an access point, the router, a server, a solar array or a battery bank. The kind says which.",
+      "indexes": [
+        {
+          "name": "room",
+          "description": "The room browse, so a steward can list what sits in one room of the hub.",
+          "path": {
+            "field": "doc",
+            "path": "room"
+          }
+        },
+        {
+          "name": "serial",
+          "description": "Finds a device by the serial number on its label, and stops the same device being entered twice.",
+          "path": {
+            "field": "doc",
+            "path": "serial"
+          },
+          "unique": true
+        }
+      ]
+    },
+    {
+      "role": "link",
+      "name": "wiring",
+      "table": "wiring",
+      "description": "Which device is cabled or associated to which, which device is part of which, and which device keeps watch on which."
+    },
+    {
+      "role": "metric",
+      "name": "reading",
+      "table": "readings",
+      "description": "One quantity the lab's devices report — whether a device is online, how much traffic it carries, how full a battery is — its unit and its limits."
+    },
+    {
+      "role": "observation",
+      "name": "sample",
+      "table": "samples",
+      "description": "One reading from one device at one moment."
+    },
+    {
+      "role": "retention",
+      "name": "retention_rule",
+      "table": "retention_rules",
+      "description": "How long samples of one kind are kept.",
+      "fields": [
+        {
+          "name": "retention_days",
+          "default": "30"
+        }
+      ]
+    }
+  ]
+}
