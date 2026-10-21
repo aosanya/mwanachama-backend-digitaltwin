@@ -102,7 +102,7 @@
     },
     "record_observations": {
       "method": "POST", "path": "/observations/batch", "call": "RecordObservations", "action": "digitaltwin.observation.record_batch",
-      "status": 201,
+      "status": 201, "tool": false,
       "title": "Record observations",
       "description": "Store many measurements in one call, which is the path a source that samples often should take. All or nothing: if one is refused, none are stored.",
       "args": [{"from": "body", "whole": true}],
