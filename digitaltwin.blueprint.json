@@ -51,6 +51,11 @@
           "nullable": true
         },
         {
+          "name": "labels",
+          "type": "json",
+          "description": "Every name the node is known by, each with its language and its form: preferred (at most one per language, the name shown), alternative (another name people use) or hidden (found by a search, never shown). Empty when the node has only its name."
+        },
+        {
           "name": "commissioned_at",
           "type": "timestamp",
           "description": "When the node entered service. Empty when unknown, and unrelated to when the row was written."

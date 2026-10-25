@@ -176,3 +176,39 @@ and is what to revisit first if it is not.
 
 `spec/examples/place.digitaltwin.json` is the place domain: areas, streets
 and addresses are node kinds there, and the module never learns the words.
+
+## A node's labels, the abbreviation table and the name match (W28, 2026-10-25)
+
+`node.labels` is a `json` field holding every name a node is known by, the
+SKOS way: each `Label` has its `text`, its `lang` and a `form` — `preferred`
+(the name shown, at most one per language), `alternative` (another name
+people use) or `hidden` (found by a search, never shown). It is not
+`nullable`, because `specstore` refuses a nullable column carried by a slice;
+an empty list is stored as NULL and reads back empty, which is the same
+thing. The forms and the one-preferred-per-language rule are checked in Go
+(`models.LabelsWellFormed`) on create and update, since a spec cannot state a
+rule over the items of a document; a breach is `ErrInvalid`.
+
+`models.ExpandLabels(labels, table)` generates the hidden forms. The table is
+`Abbreviations`, per language a map from a long word to its short form
+(`"hu": {"utca": "u."}`). Every label in a language the table covers gets one
+hidden form per word swapped either way — long to short and short to long —
+so `Fő utca` gains `fő u` and `Kossuth u.` gains `kossuth utca`. Generated
+forms are normalised (lower case, runs of spaces, dots and commas collapsed)
+and a form already present is not added again, so expanding twice changes
+nothing. It is a pure function: the loader that reads a domain's table and
+applies it when places are loaded is not built yet.
+
+`MatchLabel(ctx, kind, text)` answers every node of the kind (any kind when
+empty) whose name or any label equals the text once both are normalised the
+same way, so a search reaches preferred, alternative and hidden names alike.
+Like `DeepestHolding` it reads the candidates and compares in Go.
+
+`models.LeadingNumber(s)` reads the number a value starts with — `12/A`,
+`7b` and `103-105` read as 12, 7 and 103 — and reports false when the value
+does not start with a digit. It is how a number on a place is compared
+without the module learning what the number means.
+
+Not yet: street lines (shared's geometry field accepts `Point`, `Polygon` and
+`MultiPolygon` only; a `LineString` is refused), the GeoJSON loader, and
+declaring `MatchLabel` and `DeepestHolding` as operations.

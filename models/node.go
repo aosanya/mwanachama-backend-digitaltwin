@@ -14,6 +14,7 @@ type Node struct {
 	Status         Status         `json:"status"`
 	Location       *Location      `json:"location,omitempty"`
 	Shape          *geo.Geometry  `json:"shape,omitempty"`
+	Labels         []Label        `json:"labels,omitempty"`
 	CommissionedAt string         `json:"commissioned_at,omitempty"`
 	Notes          string         `json:"notes,omitempty"`
 	Doc            map[string]any `json:"doc,omitempty"`

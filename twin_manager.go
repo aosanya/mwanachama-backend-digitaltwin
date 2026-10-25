@@ -28,6 +28,9 @@ type (
 	Status            = models.Status
 	Relation          = models.Relation
 	Direction         = models.Direction
+	Label             = models.Label
+	LabelForm         = models.LabelForm
+	Abbreviations     = models.Abbreviations
 )
 
 const (
@@ -52,6 +55,7 @@ type TwinManager interface {
 	UpdateNode(ctx context.Context, n Node) (Node, error)
 	SetNodeStatus(ctx context.Context, id string, next Status) (Node, error)
 	DeepestHolding(ctx context.Context, kind string, at geo.Position) (Node, error)
+	MatchLabel(ctx context.Context, kind, text string) ([]Node, error)
 
 	CreateLink(ctx context.Context, l Link) (Link, error)
 	DeleteLink(ctx context.Context, relation Relation, fromNodeID, toNodeID string) error
