@@ -67,3 +67,19 @@ func TestANodeShapeSurvivesAnUpdate(t *testing.T) {
 		t.Errorf("shape after update: %+v", got.Shape)
 	}
 }
+
+func TestAStreetCarriesItsLine(t *testing.T) {
+	tm, ctx := newManagerFor(t, "place")
+	line := geo.NewLineString(geo.Position{1, 1}, geo.Position{4, 1})
+	n, err := tm.CreateNode(ctx, digitaltwin.Node{Name: "Main", Kind: "street", Shape: &line})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	got, err := tm.GetNode(ctx, n.ID)
+	if err != nil || got.Shape == nil || got.Shape.Kind != geo.KindLineString || len(got.Shape.LineString) != 2 {
+		t.Fatalf("read back %+v, %v", got.Shape, err)
+	}
+	if held, err := tm.DeepestHolding(ctx, "street", geo.Position{2, 1}); err != nil || held.ID != n.ID {
+		t.Fatalf("a point on the street answered %+v, %v", held, err)
+	}
+}

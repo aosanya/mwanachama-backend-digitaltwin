@@ -219,5 +219,10 @@ straight into a `geo.Position`; a point no shape holds answers 404.
 `TestHoldingIsAnAddressThatAnswersTheSmallestShapeAroundAPoint` pins it over
 the real mux.
 
-Not yet: street lines (shared's geometry field accepts `Point`, `Polygon` and
-`MultiPolygon` only; a `LineString` is refused) and the GeoJSON loader.
+A street carries its line as a `LineString` shape (shared's geometry field
+accepts it since S65's line addition), and `DeepestHolding` answers a point
+lying on it. A line's bounding box can have no area, so with an empty kind a
+point on a street inside an area answers the street; name the kind to ask for
+the area. `TestAStreetCarriesItsLine` pins the round trip.
+
+Not yet: the GeoJSON loader.
