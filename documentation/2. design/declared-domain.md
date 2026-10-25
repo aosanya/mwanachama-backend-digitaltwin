@@ -159,3 +159,20 @@ shipped spec, which is what catches drift under the domain nobody loaded.
 The spec and the types are checked against each other when the manager is
 built: a declared column with no field, or a field with no column, fails in
 `NewTwinManager` rather than dropping a value on every write.
+
+## A node's shape and the deepest node holding a point (W28, 2026-10-25)
+
+`node.shape` is a nullable `geometry` field (shared's S65): a GeoJSON
+`Point`, `Polygon` or `MultiPolygon`, checked by `specstore` on every write.
+It sits beside `location`, which stays the lat/lng pair it always was.
+
+`DeepestHolding(ctx, kind, at)` answers the node whose shape contains the
+point and covers the least ground, read as the smallest longitude/latitude
+bounding box among the holders. `kind` narrows the candidates and an empty
+kind reads every shaped node; a point no shape holds is `ErrNodeNotFound`.
+The candidates are read whole and tested in Go with `geo.Contains`, because
+there is no spatial index yet; that is fine at the size of one municipality
+and is what to revisit first if it is not.
+
+`spec/examples/place.digitaltwin.json` is the place domain: areas, streets
+and addresses are node kinds there, and the module never learns the words.

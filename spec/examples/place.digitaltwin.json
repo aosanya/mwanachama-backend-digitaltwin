@@ -1,0 +1,47 @@
+{
+  "module": "digitaltwin",
+  "domain": "place",
+  "instance": "place",
+  "objects": [
+    {
+      "role": "node",
+      "name": "place",
+      "table": "places",
+      "description": "One named place: an area such as a county, a town or a ward, a street, or an address on a street. The kind says which; an area's shape is its outline, and an address carries its point.",
+      "indexes": [
+        {
+          "name": "postcode",
+          "description": "Finds the places sharing one postal code.",
+          "path": {
+            "field": "doc",
+            "path": "postcode"
+          }
+        }
+      ]
+    },
+    {
+      "role": "link",
+      "name": "containment",
+      "table": "containments",
+      "description": "Which area a smaller area, a street or an address lies within, and which street an address stands on."
+    },
+    {
+      "role": "metric",
+      "name": "measure",
+      "table": "measures",
+      "description": "What a place may be measured by."
+    },
+    {
+      "role": "observation",
+      "name": "reading",
+      "table": "readings",
+      "description": "One measurement taken of a place."
+    },
+    {
+      "role": "retention",
+      "name": "keep_rule",
+      "table": "keep_rules",
+      "description": "How long readings of a place are kept."
+    }
+  ]
+}

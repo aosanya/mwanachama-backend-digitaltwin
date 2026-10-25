@@ -48,6 +48,7 @@ func (m *twinManager) UpdateNode(ctx context.Context, n Node) (Node, error) {
 
 	held.Name = n.Name
 	held.Location = n.Location
+	held.Shape = n.Shape
 	held.CommissionedAt = n.CommissionedAt
 	held.Notes = n.Notes
 	held.Doc = n.Doc

@@ -45,6 +45,12 @@
           "nullable": true
         },
         {
+          "name": "shape",
+          "type": "geometry",
+          "description": "The outline the node covers, as a GeoJSON Point, Polygon or MultiPolygon. Absent when the node has no extent worth drawing. A point says where a node is; a shape says what ground it holds, which is what a containment query reads.",
+          "nullable": true
+        },
+        {
           "name": "commissioned_at",
           "type": "timestamp",
           "description": "When the node entered service. Empty when unknown, and unrelated to when the row was written."

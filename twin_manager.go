@@ -3,6 +3,7 @@ package digitaltwin
 import (
 	"context"
 	"fmt"
+	"github.com/aosanya/mwanachama-backend-shared/geo"
 	"time"
 
 	"gorm.io/gorm"
@@ -50,6 +51,7 @@ type TwinManager interface {
 	ListNodes(ctx context.Context, filter NodeFilter) ([]Node, error)
 	UpdateNode(ctx context.Context, n Node) (Node, error)
 	SetNodeStatus(ctx context.Context, id string, next Status) (Node, error)
+	DeepestHolding(ctx context.Context, kind string, at geo.Position) (Node, error)
 
 	CreateLink(ctx context.Context, l Link) (Link, error)
 	DeleteLink(ctx context.Context, relation Relation, fromNodeID, toNodeID string) error

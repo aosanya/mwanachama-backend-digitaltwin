@@ -1,5 +1,7 @@
 package models
 
+import "github.com/aosanya/mwanachama-backend-shared/geo"
+
 type Location struct {
 	Lat float64 `json:"lat"`
 	Lng float64 `json:"lng"`
@@ -11,6 +13,7 @@ type Node struct {
 	Kind           string         `json:"kind"`
 	Status         Status         `json:"status"`
 	Location       *Location      `json:"location,omitempty"`
+	Shape          *geo.Geometry  `json:"shape,omitempty"`
 	CommissionedAt string         `json:"commissioned_at,omitempty"`
 	Notes          string         `json:"notes,omitempty"`
 	Doc            map[string]any `json:"doc,omitempty"`
