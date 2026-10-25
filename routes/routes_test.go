@@ -73,8 +73,8 @@ func TestTheDeclaredTableBuilds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
-	if len(built) != 16 {
-		t.Fatalf("built %d routes, want the 16 the operations file declares", len(built))
+	if len(built) != 17 {
+		t.Fatalf("built %d routes, want the 17 the operations file declares", len(built))
 	}
 	for _, rt := range built {
 		if rt.Action == "" {
@@ -91,8 +91,8 @@ func TestEveryRouteIsGatedUntilNamedAnonymous(t *testing.T) {
 	if public := routes.PublicRoutes(tm); len(public) != 0 {
 		t.Fatalf("%d routes are reachable without a caller", len(public))
 	}
-	if gated := routes.OperatorRoutes(tm, routes.Mount{}); len(gated) != 16 {
-		t.Fatalf("%d routes are gated, want all 16", len(gated))
+	if gated := routes.OperatorRoutes(tm, routes.Mount{}); len(gated) != 17 {
+		t.Fatalf("%d routes are gated, want all 17", len(gated))
 	}
 }
 
@@ -245,5 +245,24 @@ func TestLatestSwitchesOnTheMetricName(t *testing.T) {
 	}
 	if len(many) != 2 {
 		t.Fatalf("no metric named answered %d observations, want 2", len(many))
+	}
+}
+
+func TestMatchingIsAnAddressOfItsOwnAndNotANodeID(t *testing.T) {
+	mux, tm, ctx := newMux(t)
+	n, err := tm.CreateNode(ctx, digitaltwin.Node{Name: "Line 4", Kind: "pipeline", Labels: []digitaltwin.Label{{Text: "L4", Form: "alternative"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := do(t, mux, "GET", "/nodes/matching?kind=pipeline&text=l4", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("code = %d: %s", w.Code, w.Body)
+	}
+	var got []digitaltwin.Node
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(got) != 1 || got[0].ID != n.ID {
+		t.Fatalf("got %+v, want the one node", got)
 	}
 }

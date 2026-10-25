@@ -102,8 +102,8 @@ func TestEveryDeclaredOperationIsAToolThatNamesItsInstance(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
-	if len(list.Tools) != 16 {
-		t.Fatalf("listed %d tools, want the 16 the operations file declares", len(list.Tools))
+	if len(list.Tools) != 17 {
+		t.Fatalf("listed %d tools, want the 17 the operations file declares", len(list.Tools))
 	}
 	names := map[string]bool{}
 	for _, tl := range list.Tools {

@@ -12,12 +12,13 @@ If the two disagree — a wrong arity, a missing method, a sentinel the spec
 maps but nobody supplies — `dispatch.Dispatch` refuses to build the table at
 all, so the failure arrives at startup rather than on the first request.
 
-## The sixteen operations
+## The seventeen operations
 
 | Method | Path | Manager call | Action | Status |
 |---|---|---|---|---|
 | POST | `/nodes` | `CreateNode` | `digitaltwin.node.create` | 201 |
 | GET | `/nodes` | `ListNodes` | `digitaltwin.node.list` | 200 |
+| GET | `/nodes/matching` | `MatchLabel` | `digitaltwin.node.match` | 200 |
 | GET | `/nodes/{nodeID}` | `GetNode` | `digitaltwin.node.read` | 200 |
 | PUT | `/nodes/{nodeID}` | `UpdateNode` | `digitaltwin.node.update` | 200 |
 | POST | `/nodes/{nodeID}/status` | `SetNodeStatus` | `digitaltwin.node.set_status` | 200 |
@@ -44,9 +45,9 @@ back and fails on one.
 ## The gate is data
 
 `AnonymousActions` is an allowlist of action ids and it is **empty**. This
-module publishes nothing anonymously: every one of the sixteen operations
+module publishes nothing anonymously: every one of the seventeen operations
 arrives gated, and `TestEveryRouteIsGatedUntilNamedAnonymous` asserts that
-`PublicRoutes` is empty and all sixteen are in the gated half.
+`PublicRoutes` is empty and all seventeen are in the gated half.
 
 The allowlist names what is public, never what is protected. An operation
 added to the file later and not named there arrives gated, so the failure

@@ -202,7 +202,10 @@ applies it when places are loaded is not built yet.
 `MatchLabel(ctx, kind, text)` answers every node of the kind (any kind when
 empty) whose name or any label equals the text once both are normalised the
 same way, so a search reaches preferred, alternative and hidden names alike.
-Like `DeepestHolding` it reads the candidates and compares in Go.
+Like `DeepestHolding` it reads the candidates and compares in Go. It is
+declared as `match_nodes`, `GET /nodes/matching?kind=&text=`, action
+`digitaltwin.node.match`; the fixed segment outranks `/nodes/{nodeID}` in the
+mux, which `TestMatchingIsAnAddressOfItsOwnAndNotANodeID` pins.
 
 `models.LeadingNumber(s)` reads the number a value starts with — `12/A`,
 `7b` and `103-105` read as 12, 7 and 103 — and reports false when the value
@@ -211,4 +214,5 @@ without the module learning what the number means.
 
 Not yet: street lines (shared's geometry field accepts `Point`, `Polygon` and
 `MultiPolygon` only; a `LineString` is refused), the GeoJSON loader, and
-declaring `MatchLabel` and `DeepestHolding` as operations.
+declaring `DeepestHolding` as an operation (its point argument is two
+numbers the dispatcher has no binding for yet).
