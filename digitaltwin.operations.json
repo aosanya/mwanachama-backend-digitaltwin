@@ -35,6 +35,19 @@
       ],
       "returns": [{"body": true}]
     },
+    "deepest_holding": {
+      "method": "GET",
+      "path": "/nodes/holding",
+      "call": "DeepestHolding",
+      "action": "digitaltwin.node.holding",
+      "title": "Find the node holding a point",
+      "description": "The smallest node whose shape contains the point. An empty kind matches every kind; a point no shape holds answers not found.",
+      "args": [
+        {"from": "query", "as": "kind", "description": "Narrows to one kind. Empty matches all."},
+        {"from": "query", "as": "at", "required": true, "description": "The point, as [longitude, latitude]."}
+      ],
+      "returns": [{"body": true}]
+    },
     "update_node": {
       "method": "PUT", "path": "/nodes/{nodeID}", "call": "UpdateNode", "action": "digitaltwin.node.update",
       "title": "Update node",

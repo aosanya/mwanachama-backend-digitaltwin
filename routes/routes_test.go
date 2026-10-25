@@ -15,6 +15,7 @@ import (
 
 	digitaltwin "github.com/aosanya/mwanachama-backend-digitaltwin"
 	"github.com/aosanya/mwanachama-backend-digitaltwin/routes"
+	"github.com/aosanya/mwanachama-backend-shared/geo"
 	"github.com/aosanya/mwanachama-backend-shared/spec"
 )
 
@@ -73,8 +74,8 @@ func TestTheDeclaredTableBuilds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
-	if len(built) != 17 {
-		t.Fatalf("built %d routes, want the 17 the operations file declares", len(built))
+	if len(built) != 18 {
+		t.Fatalf("built %d routes, want the 18 the operations file declares", len(built))
 	}
 	for _, rt := range built {
 		if rt.Action == "" {
@@ -91,8 +92,8 @@ func TestEveryRouteIsGatedUntilNamedAnonymous(t *testing.T) {
 	if public := routes.PublicRoutes(tm); len(public) != 0 {
 		t.Fatalf("%d routes are reachable without a caller", len(public))
 	}
-	if gated := routes.OperatorRoutes(tm, routes.Mount{}); len(gated) != 17 {
-		t.Fatalf("%d routes are gated, want all 17", len(gated))
+	if gated := routes.OperatorRoutes(tm, routes.Mount{}); len(gated) != 18 {
+		t.Fatalf("%d routes are gated, want all 18", len(gated))
 	}
 }
 
@@ -264,5 +265,32 @@ func TestMatchingIsAnAddressOfItsOwnAndNotANodeID(t *testing.T) {
 	}
 	if len(got) != 1 || got[0].ID != n.ID {
 		t.Fatalf("got %+v, want the one node", got)
+	}
+}
+
+func TestHoldingIsAnAddressThatAnswersTheSmallestShapeAroundAPoint(t *testing.T) {
+	mux, tm, ctx := newMux(t)
+	outer := geo.NewPolygon(geo.Ring{{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}})
+	inner := geo.NewPolygon(geo.Ring{{2, 2}, {3, 2}, {3, 3}, {2, 3}, {2, 2}})
+	if _, err := tm.CreateNode(ctx, digitaltwin.Node{Name: "Outer", Kind: "pipeline", Shape: &outer}); err != nil {
+		t.Fatal(err)
+	}
+	want, err := tm.CreateNode(ctx, digitaltwin.Node{Name: "Inner", Kind: "pipeline", Shape: &inner})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := do(t, mux, "GET", "/nodes/holding?kind=pipeline&at=%5B2.5,2.5%5D", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("code = %d: %s", w.Code, w.Body)
+	}
+	var got digitaltwin.Node
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if got.ID != want.ID {
+		t.Fatalf("got %s, want %s", got.Name, want.Name)
+	}
+	if miss := do(t, mux, "GET", "/nodes/holding?at=%5B50,50%5D", ""); miss.Code != http.StatusNotFound {
+		t.Fatalf("a point nothing holds answered %d: %s", miss.Code, miss.Body)
 	}
 }

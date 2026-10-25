@@ -212,7 +212,12 @@ mux, which `TestMatchingIsAnAddressOfItsOwnAndNotANodeID` pins.
 does not start with a digit. It is how a number on a place is compared
 without the module learning what the number means.
 
+`DeepestHolding` is declared as `deepest_holding`,
+`GET /nodes/holding?kind=&at=[lon,lat]`, action `digitaltwin.node.holding`.
+The point arrives as one JSON array in the query, which the dispatcher decodes
+straight into a `geo.Position`; a point no shape holds answers 404.
+`TestHoldingIsAnAddressThatAnswersTheSmallestShapeAroundAPoint` pins it over
+the real mux.
+
 Not yet: street lines (shared's geometry field accepts `Point`, `Polygon` and
-`MultiPolygon` only; a `LineString` is refused), the GeoJSON loader, and
-declaring `DeepestHolding` as an operation (its point argument is two
-numbers the dispatcher has no binding for yet).
+`MultiPolygon` only; a `LineString` is refused) and the GeoJSON loader.
