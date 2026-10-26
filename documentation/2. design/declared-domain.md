@@ -212,6 +212,16 @@ mux, which `TestMatchingIsAnAddressOfItsOwnAndNotANodeID` pins.
 does not start with a digit. It is how a number on a place is compared
 without the module learning what the number means.
 
+`MatchAddress(ctx, streetKind, street, number)` is decision 513's match: the
+streets of `streetKind` known by `street` under any of their names (the same
+rule as `MatchLabel`), then every node `part_of` one of them whose
+`doc.house_number` has the same leading number as `number`. `12` finds
+`12/A`; a number with no leading digit finds nothing. The kinds stay the
+domain's: the caller names the street kind, and an address is whatever is
+`part_of` a matched street. It is a Go method only — not yet a declared
+operation. `TestAnAddressIsMatchedByItsStreetsNamesThenItsLeadingNumber`
+pins it.
+
 `DeepestHolding` is declared as `deepest_holding`,
 `GET /nodes/holding?kind=&at=[lon,lat]`, action `digitaltwin.node.holding`.
 The point arrives as one JSON array in the query, which the dispatcher decodes

@@ -56,6 +56,7 @@ type TwinManager interface {
 	SetNodeStatus(ctx context.Context, id string, next Status) (Node, error)
 	DeepestHolding(ctx context.Context, kind string, at geo.Position) (Node, error)
 	MatchLabel(ctx context.Context, kind, text string) ([]Node, error)
+	MatchAddress(ctx context.Context, streetKind, street, number string) ([]Node, error)
 
 	CreateLink(ctx context.Context, l Link) (Link, error)
 	DeleteLink(ctx context.Context, relation Relation, fromNodeID, toNodeID string) error
