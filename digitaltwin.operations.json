@@ -48,6 +48,20 @@
       ],
       "returns": [{"body": true}]
     },
+    "match_numbered": {
+      "method": "GET",
+      "path": "/nodes/numbered",
+      "call": "MatchAddress",
+      "action": "digitaltwin.node.match_numbered",
+      "title": "Match numbered nodes by their parent's name",
+      "description": "The nodes part_of a parent of the kind known by the text under any name (preferred, alternative or hidden, ignoring case, extra spaces, dots and commas) whose document's house_number starts with the same number as the one asked for, so 12 finds 12/A. A number that does not start with a digit finds nothing.",
+      "args": [
+        {"from": "query", "as": "kind", "description": "The parent's kind. Empty matches all."},
+        {"from": "query", "as": "text", "description": "The parent's name to look for."},
+        {"from": "query", "as": "number", "description": "The number to match, read by its leading digits."}
+      ],
+      "returns": [{"body": true}]
+    },
     "update_node": {
       "method": "PUT", "path": "/nodes/{nodeID}", "call": "UpdateNode", "action": "digitaltwin.node.update",
       "title": "Update node",

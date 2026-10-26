@@ -74,8 +74,8 @@ func TestTheDeclaredTableBuilds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
-	if len(built) != 18 {
-		t.Fatalf("built %d routes, want the 18 the operations file declares", len(built))
+	if len(built) != 19 {
+		t.Fatalf("built %d routes, want the 19 the operations file declares", len(built))
 	}
 	for _, rt := range built {
 		if rt.Action == "" {
@@ -92,8 +92,8 @@ func TestEveryRouteIsGatedUntilNamedAnonymous(t *testing.T) {
 	if public := routes.PublicRoutes(tm); len(public) != 0 {
 		t.Fatalf("%d routes are reachable without a caller", len(public))
 	}
-	if gated := routes.OperatorRoutes(tm, routes.Mount{}); len(gated) != 18 {
-		t.Fatalf("%d routes are gated, want all 18", len(gated))
+	if gated := routes.OperatorRoutes(tm, routes.Mount{}); len(gated) != 19 {
+		t.Fatalf("%d routes are gated, want all 19", len(gated))
 	}
 }
 
@@ -292,5 +292,45 @@ func TestHoldingIsAnAddressThatAnswersTheSmallestShapeAroundAPoint(t *testing.T)
 	}
 	if miss := do(t, mux, "GET", "/nodes/holding?at=%5B50,50%5D", ""); miss.Code != http.StatusNotFound {
 		t.Fatalf("a point nothing holds answered %d: %s", miss.Code, miss.Body)
+	}
+}
+
+func TestNumberedIsAnAddressThatMatchesAParentsNamesThenTheLeadingNumber(t *testing.T) {
+	mux, tm, ctx := newMux(t)
+	parent, err := tm.CreateNode(ctx, digitaltwin.Node{Name: "Line 4", Kind: "pipeline", Labels: []digitaltwin.Label{{Text: "L4", Form: "alternative"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := tm.CreateNode(ctx, digitaltwin.Node{Name: "Joint 12/A", Kind: "valve", Doc: map[string]any{"house_number": "12/A"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, err := tm.CreateNode(ctx, digitaltwin.Node{Name: "Joint 13", Kind: "valve", Doc: map[string]any{"house_number": "13"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, child := range []digitaltwin.Node{want, other} {
+		if _, err := tm.CreateLink(ctx, digitaltwin.Link{FromNodeID: child.ID, ToNodeID: parent.ID, Relation: "part_of"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	w := do(t, mux, "GET", "/nodes/numbered?kind=pipeline&text=l4&number=12", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("code = %d: %s", w.Code, w.Body)
+	}
+	var got []digitaltwin.Node
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode: %v — %s", err, w.Body)
+	}
+	if len(got) != 1 || got[0].ID != want.ID {
+		t.Fatalf("got %+v, want only %s", got, want.Name)
+	}
+	none := do(t, mux, "GET", "/nodes/numbered?kind=pipeline&text=l4&number=A12", "")
+	if none.Code != http.StatusOK {
+		t.Fatalf("a number with no leading digit answered %d: %s", none.Code, none.Body)
+	}
+	var empty []digitaltwin.Node
+	if err := json.Unmarshal(none.Body.Bytes(), &empty); err != nil || len(empty) != 0 {
+		t.Fatalf("a number with no leading digit found %s", none.Body)
 	}
 }

@@ -218,9 +218,19 @@ rule as `MatchLabel`), then every node `part_of` one of them whose
 `doc.house_number` has the same leading number as `number`. `12` finds
 `12/A`; a number with no leading digit finds nothing. The kinds stay the
 domain's: the caller names the street kind, and an address is whatever is
-`part_of` a matched street. It is a Go method only — not yet a declared
-operation. `TestAnAddressIsMatchedByItsStreetsNamesThenItsLeadingNumber`
+`part_of` a matched street. `TestAnAddressIsMatchedByItsStreetsNamesThenItsLeadingNumber`
 pins it.
+
+It is declared as `match_numbered`, `GET /nodes/numbered?kind=&text=&number=`,
+action `digitaltwin.node.match_numbered`. The address and the action say
+*numbered* rather than *address* or *street*: those are a place domain's
+words, and the module's route table names no domain, so the query is named for
+what it reads — a parent known by a name, then a child's leading number. The
+arguments reuse `match_nodes`' `kind` and `text`, here naming the parent.
+A number with no leading digit answers 200 with an empty list, not 404,
+because a match is a search, not a lookup.
+`TestNumberedIsAnAddressThatMatchesAParentsNamesThenTheLeadingNumber` pins it
+over the real mux.
 
 `DeepestHolding` is declared as `deepest_holding`,
 `GET /nodes/holding?kind=&at=[lon,lat]`, action `digitaltwin.node.holding`.

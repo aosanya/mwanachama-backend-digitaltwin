@@ -97,7 +97,7 @@ bulk import validating what it read before it opens a connection.
 
 ## The route table is declared
 
-`digitaltwin.operations.json` declares all eighteen addresses, and
+`digitaltwin.operations.json` declares all nineteen addresses, and
 `routes/routes.go` is a forty-line adapter over
 `mwanachama-backend-shared/dispatch`. There are no hand-written handlers and
 no route builders to name — adding an address is an edit to that file plus a
